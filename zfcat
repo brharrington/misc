@@ -1,0 +1,38 @@
+#!/bin/sh
+exec /Users/brharrington/tools/scala-2.11.2/bin/scala $0 $@
+!#
+
+import java.io._
+import java.util.zip._
+
+object zfcat {
+  def copy(in: InputStream, out: OutputStream): Unit = {
+    val buffer = new Array[Byte](4096)
+    var length = in.read(buffer)
+    while (length != -1) {
+      out.write(buffer, 0, length)
+      length = in.read(buffer)
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    if (args.length < 2) {
+      System.err.printf("Usage: zfcat <archive> [file ...]%n")
+      sys.exit(1)
+    }
+
+    val zfile = new ZipFile(new File(args(0)))
+    args.tail.foreach(file => {
+      val entry = zfile.getEntry(file)
+      if (entry != null) {
+        val in = zfile.getInputStream(entry)
+        copy(in, System.out)
+        in.close
+      } else {
+        System.err.printf("Warning: zfcat: %s: no such file%n", file)
+      }
+    })
+  }
+}
+
+zfcat.main(args)
